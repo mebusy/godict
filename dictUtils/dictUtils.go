@@ -1,7 +1,7 @@
 package dictUtils
 
 import ( 
-    "dict/sqlManager"
+    "github.com/mebusy/godict/sqlManager"
 )
 
 

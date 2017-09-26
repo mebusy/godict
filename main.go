@@ -2,7 +2,7 @@ package main
 
 import ( 
     "fmt"
-    "dict/dictUtils"
+    "github.com/mebusy/godict/dictUtils"
 )
 
 func main() {
