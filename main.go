@@ -27,7 +27,9 @@ func main() {
     dictUtils.LoadRootDict( db_idx_dict )
 
 
-    fmt.Println(    dictUtils.GetSynonymsRoots( "arch" ) )
+    fmt.Println(    dictUtils.GenerateFormatedMeaning( "arch" ) )
+    fmt.Println(    dictUtils.GetSynonymsRoots( db_idx_dict , "arch" ) )
+    fmt.Println(    dictUtils.GenerateRootWordExamples( db_idx_dict , "arch" ) )
 
     dictUtils.DBCloseAll()
     fmt.Println( "done" )

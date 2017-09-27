@@ -83,7 +83,8 @@ func LoadRootDict( db_idx int ) {
 
 const COLOR_ROOT = "#008b8b" 
 
-func GetSynonymsRoots(root string) string {
+// return format root meaning , it should has en meaning, cn meaning 
+func GenerateFormatedMeaning(root string) string {
     var sb bytes.Buffer
     sb.WriteString( fmt.Sprintf( "<color=blue>词根</color>:  <b><color=%v>%v</color></b>\n" , COLOR_ROOT, root   ) )
 
@@ -105,9 +106,84 @@ func GetSynonymsRoots(root string) string {
     return sb.String()
 }
 
+// return formated roots has the syn means with specified `root`
+func GetSynonymsRoots( db_idx int,  root string) string {
+    sql := sqlManager.GetInstance()
+    if db_idx<0 || db_idx > sql.ConnectionCount() {
+        log.Println( "GetSynonymsRoots","wrong db index" )
+        return ""
+    }
 
+    synRoots:= make( []string , 0, 8 ) 
+    means := _rootDict[root]
+    
+    cmdText := ""   
+    for i:=0 ; i< len(means) ; i+=3 {
+        en := means [i]
+        cmdText += fmt.Sprintf(  " %[2]v en1 = \"%[1]v\" OR en2 = \"%[1]v\" OR en3 = \"%[1]v\"  OR en4 = \"%[1]v\"  " ,
+            en , If(i==0,"","OR").(string) )    
+    }
+    cmdText = fmt.Sprintf( "SELECT word FROM root WHERE %[1]v ORDER BY word COLLATE NOCASE " , cmdText  )
 
+    db := sql.AllConns[ db_idx ]
+    rows, err := db.Query( cmdText ) 
+    if HasErr(err) {
+        return ""   
+    }
+    defer rows.Close()
+    
+    for rows.Next() {
+        var word string 
+        err := rows.Scan( &word )
+        if HasErr(err) {
+            break
+        }
+        if word != root {
+            synRoots = append(synRoots,word)   
+        }
+    }
 
+    var seeAlso string 
+    for i, key := range synRoots {
+        seeAlso += fmt.Sprintf( "%[3]v<b><color=%[2]v>%[1]v</color></b>", key, COLOR_ROOT , If(i==0,"",",").(string)  )   
+    }
+    if seeAlso != "" {
+        seeAlso = "\nSee also : " + seeAlso + "\n"   
+    }
 
+    return seeAlso 
+    
+}
+
+func GenerateRootWordExamples(db_idx int,  root string) string {
+    sql := sqlManager.GetInstance()
+    if db_idx<0 || db_idx > sql.ConnectionCount() {
+        log.Println( "GenerateRootWordExamples","wrong db index" )
+        return ""
+    }
+
+    var sb bytes.Buffer 
+
+    cmdText := fmt.Sprintf( "SELECT word , ex FROM dict WHERE  ex != \"\" AND (root1 = \"%[1]v\"  OR  root2 = \"%[1]v\" ) ORDER BY word COLLATE NOCASE " , root  )
+
+    db := sql.AllConns[ db_idx ]
+    rows, err := db.Query( cmdText ) 
+    if HasErr(err) {
+        return ""   
+    }
+    defer rows.Close()
+    
+    for rows.Next() {
+        var word string 
+        var ex string 
+        err := rows.Scan( &word , &ex )
+        if HasErr(err) {
+            break
+        }
+        sb.WriteString( fmt.Sprintf(  "<color=blue>%v</color>:\u3000%v\n\n" , word, ex   ) )
+    }
+
+    return sb.String() 
+}
 
 
