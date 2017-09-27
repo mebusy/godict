@@ -83,8 +83,8 @@ func LoadRootDict( db_idx int ) {
 
 const COLOR_ROOT = "#008b8b" 
 
-// return format root meaning , it should has en meaning, cn meaning 
-func GenerateFormatedMeaning(root string) string {
+// get format root meaning , it should has en meaning, cn meaning 
+func generateFormatedMeaning(root string , ch chan string) {
     var sb bytes.Buffer
     sb.WriteString( fmt.Sprintf( "<color=blue>词根</color>:  <b><color=%v>%v</color></b>\n" , COLOR_ROOT, root   ) )
 
@@ -103,15 +103,15 @@ func GenerateFormatedMeaning(root string) string {
             If(bShowEn,en,"").(string),cn ))
 
     }
-    return sb.String()
+    ch <- sb.String()
 }
 
-// return formated roots has the syn means with specified `root`
-func GetSynonymsRoots( db_idx int,  root string) string {
+// get formated roots has the syn means with specified `root`
+func getSynonymsRoots( db_idx int,  root string , ch chan string )  {
     sql := sqlManager.GetInstance()
     if db_idx<0 || db_idx > sql.ConnectionCount() {
         log.Println( "GetSynonymsRoots","wrong db index" )
-        return ""
+        ch <- ""
     }
 
     synRoots:= make( []string , 0, 8 ) 
@@ -128,7 +128,7 @@ func GetSynonymsRoots( db_idx int,  root string) string {
     db := sql.AllConns[ db_idx ]
     rows, err := db.Query( cmdText ) 
     if HasErr(err) {
-        return ""   
+        ch <- ""
     }
     defer rows.Close()
     
@@ -151,15 +151,15 @@ func GetSynonymsRoots( db_idx int,  root string) string {
         seeAlso = "\nSee also : " + seeAlso + "\n"   
     }
 
-    return seeAlso 
+    ch <- seeAlso 
     
 }
 
-func GenerateRootWordExamples(db_idx int,  root string) string {
+func generateRootWordExamples(db_idx int,  root string, ch chan string ) {
     sql := sqlManager.GetInstance()
     if db_idx<0 || db_idx > sql.ConnectionCount() {
         log.Println( "GenerateRootWordExamples","wrong db index" )
-        return ""
+        ch <- ""
     }
 
     var sb bytes.Buffer 
@@ -169,7 +169,7 @@ func GenerateRootWordExamples(db_idx int,  root string) string {
     db := sql.AllConns[ db_idx ]
     rows, err := db.Query( cmdText ) 
     if HasErr(err) {
-        return ""   
+        ch <- ""
     }
     defer rows.Close()
     
@@ -183,7 +183,27 @@ func GenerateRootWordExamples(db_idx int,  root string) string {
         sb.WriteString( fmt.Sprintf(  "<color=blue>%v</color>:\u3000%v\n\n" , word, ex   ) )
     }
 
-    return sb.String() 
+    ch <- sb.String() 
 }
+
+func GenerateRootInterpretation(db_idx int,  root string) string {
+    ch_root_mean := make(  chan string )
+    ch_synroot := make( chan string )
+    ch_root_example := make( chan string )
+
+    go generateFormatedMeaning( root, ch_root_mean )
+    go getSynonymsRoots( db_idx , root , ch_synroot ) 
+    go generateRootWordExamples( db_idx, root, ch_root_example ) 
+
+    rootMean := <- ch_root_mean
+    synRoots := <- ch_synroot
+    wordExample := <- ch_root_example 
+    
+    return fmt.Sprintf( "\n\n%s%s\n%s" , rootMean , synRoots , wordExample   )
+
+       
+}
+
+
 
 
