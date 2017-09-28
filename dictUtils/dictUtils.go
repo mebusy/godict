@@ -198,10 +198,38 @@ func GenerateRootInterpretation(db_idx int,  root string) string {
     rootMean := <- ch_root_mean
     synRoots := <- ch_synroot
     wordExample := <- ch_root_example 
-    
     return fmt.Sprintf( "\n\n%s%s\n%s" , rootMean , synRoots , wordExample   )
+}
 
-       
+func SearchWordLike( db_idx int, _word string ) string {
+    sql := sqlManager.GetInstance()
+    if db_idx<0 || db_idx > sql.ConnectionCount() {
+        log.Println( "SearchWordLike","wrong db index" )
+        return ""
+    }
+    MAX_CELL_NUMBER := 30
+    cmdText := fmt.Sprintf("SELECT word,root1,root2 FROM dict WHERE word like \"%%%[1]s%%\"  " +
+        "ORDER BY (CASE WHEN word = \"%[1]s\" COLLATE NOCASE THEN 1 WHEN word LIKE \"%[1]s%%\" THEN 2 ELSE 3 END) limit %[2]d   " , 
+        _word , MAX_CELL_NUMBER )
+    
+    db := sql.AllConns[ db_idx ]
+    rows, err := db.Query( cmdText ) 
+    if HasErr(err) {
+        return ""
+    }
+    defer rows.Close()
+    
+    for rows.Next() {
+        var word string 
+        var root1 string 
+        var root2 string 
+        err := rows.Scan( &word , &root1, &root2 )
+        if HasErr(err) {
+            break
+        }
+        fmt.Println( word, root1, root2  )
+    }
+    return ""
 }
 
 

@@ -29,6 +29,8 @@ func main() {
 
     fmt.Println(    dictUtils.GenerateRootInterpretation  ( db_idx_dict , "arch" ) )
 
+    dictUtils.SearchWordLike( db_idx_dict, "percei" )
+
     dictUtils.DBCloseAll()
     fmt.Println( "done" )
 }
