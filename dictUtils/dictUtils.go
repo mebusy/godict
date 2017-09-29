@@ -38,7 +38,7 @@ func LoadRootDict( db_idx int ) {
         return 
     }
     // load dict
-    cmdText :=  "SELECT * from root ORDER BY word COLLATE NOCASE " 
+    cmdText :=  "SELECT word,en1,cn1,show_en1,en2,cn2,show_en2,en3,cn3,show_en3,en4,cn4,show_en4 from root ORDER BY word COLLATE NOCASE " 
     db := sql.AllConns[ db_idx ]
     rows, err := db.Query( cmdText ) 
     if HasErr(err) {
@@ -201,18 +201,21 @@ func GenerateRootInterpretation(db_idx int,  root string) string {
     return fmt.Sprintf( "\n\n%s%s\n%s" , rootMean , synRoots , wordExample   )
 }
 
+//======= func for main dict =========================
+
 func SearchWordLike( db_idx int, _word string ) string {
     sql := sqlManager.GetInstance()
     if db_idx<0 || db_idx > sql.ConnectionCount() {
         log.Println( "SearchWordLike","wrong db index" )
         return ""
     }
+    db := sql.AllConns[ db_idx ]
+
     MAX_CELL_NUMBER := 30
     cmdText := fmt.Sprintf("SELECT word,root1,root2 FROM dict WHERE word like \"%%%[1]s%%\"  " +
         "ORDER BY (CASE WHEN word = \"%[1]s\" COLLATE NOCASE THEN 1 WHEN word LIKE \"%[1]s%%\" THEN 2 ELSE 3 END) limit %[2]d   " , 
         _word , MAX_CELL_NUMBER )
     
-    db := sql.AllConns[ db_idx ]
     rows, err := db.Query( cmdText ) 
     if HasErr(err) {
         return ""
@@ -232,6 +235,30 @@ func SearchWordLike( db_idx int, _word string ) string {
     return ""
 }
 
+func GetWordInterpretation( db_idx int , word string  ) string {
+    sql := sqlManager.GetInstance()
+    if db_idx<0 || db_idx > sql.ConnectionCount() {
+        log.Println( "GetWordInterpretation","wrong db index" )
+        return ""
+    }
+    db := sql.AllConns[ db_idx ]
 
+    _ = db
+
+    cmdText := fmt.Sprintf( "SELECT etymology,desc_en,desc_cn,indo_roots,ex,voice,root1,root2  FROM dict WHERE word = \"%s\"  " , word  )
+    rows, err := db.Query( cmdText )
+    if HasErr(err) { return "" }
+    defer rows.Close()
+
+    var etymology,desc_en,desc_cn,indo_roots,ex,root1,root2 string 
+    var voice int 
+    if rows.Next() {
+        
+        err := rows.Scan( &etymology,&desc_en,&desc_cn,&indo_roots,&ex,&voice,&root1,&root2 )
+        if HasErr(err) { return "" }
+    }
+
+    return etymology    
+}
 
 

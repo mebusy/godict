@@ -39,6 +39,8 @@ func main() {
 
     dictUtils.SearchWordLike( db_idx_dict, "percei" )
 
+    fmt.Println( dictUtils.GetWordInterpretation(  db_idx_dict , "perceive" ) )
+
     dictUtils.DBCloseAll()
     fmt.Println( "done" )
 }
