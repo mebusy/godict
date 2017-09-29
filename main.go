@@ -5,6 +5,7 @@ import (
     "github.com/mebusy/godict/dictUtils"
     "os"
     "path/filepath"
+    "runtime"
 )
 
 func main() {
@@ -19,6 +20,13 @@ func main() {
     path := "/Volumes/WORK/WORK/mebusy_git_dict/dict_client/Assets/StreamingAssets/dict.db"
     path2 := "/Volumes/WORK/WORK/mebusy_git_dict/dict_client/Assets/StreamingAssets/pron.db"
 
+    if runtime.GOOS == "linux" {
+        fmt.Println( runtime.GOOS )
+        path = "/home/qibinyi/WORK/dict_dbs/dict.db"
+        path2 = "/home/qibinyi/WORK/dict_dbs/pron.db"
+    }
+
+    //*/
     db_idx_dict := dictUtils.DBConnect(path)
     idx2 := dictUtils.DBConnect(path2)
     idx3 := dictUtils.DBConnect(path)
