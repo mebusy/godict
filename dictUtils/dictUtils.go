@@ -4,6 +4,7 @@ import (
     "fmt"
     "strconv"
     "github.com/mebusy/godict/sqlManager"
+    "github.com/mebusy/godict/cryptor"
     . "github.com/mebusy/godict/extension"
     "log"
     "strings"
@@ -103,7 +104,7 @@ func generateFormatedMeaning(root string , ch chan string) {
             If(bShowEn,en,"").(string),cn ))
 
     }
-    ch <- sb.String()
+    ch <- strings.TrimSpace( sb.String() )
 }
 
 // get formated roots has the syn means with specified `root`
@@ -151,7 +152,7 @@ func getSynonymsRoots( db_idx int,  root string , ch chan string )  {
         seeAlso = "\nSee also : " + seeAlso + "\n"   
     }
 
-    ch <- seeAlso 
+    ch <- strings.TrimSpace(seeAlso) 
     
 }
 
@@ -183,7 +184,7 @@ func generateRootWordExamples(db_idx int,  root string, ch chan string ) {
         sb.WriteString( fmt.Sprintf(  "<color=blue>%v</color>:\u3000%v\n\n" , word, ex   ) )
     }
 
-    ch <- sb.String() 
+    ch <- strings.TrimSpace(sb.String() )
 }
 
 func GenerateRootInterpretation(db_idx int,  root string) string {
@@ -198,10 +199,14 @@ func GenerateRootInterpretation(db_idx int,  root string) string {
     rootMean := <- ch_root_mean
     synRoots := <- ch_synroot
     wordExample := <- ch_root_example 
-    return fmt.Sprintf( "\n\n%s%s\n%s" , rootMean , synRoots , wordExample   )
+    return fmt.Sprintf( "\n\n%s\n\n%s\n\n%s" , rootMean , synRoots , wordExample   )
 }
 
 //======= func for main dict =========================
+
+var key_4_key = []byte("mebusy key 4 key")
+var key_4_dict = []byte("mebusy 2018 dict")
+var key_4_indo = []byte("gj+uRZLqDRsVlEE5sTNEoAXMGR8ODOl2/OZyvvgkqDYpqy0uP6+Snkz65M9O11LM")
 
 func SearchWordLike( db_idx int, _word string ) string {
     sql := sqlManager.GetInstance()
@@ -215,7 +220,6 @@ func SearchWordLike( db_idx int, _word string ) string {
     cmdText := fmt.Sprintf("SELECT word,root1,root2 FROM dict WHERE word like \"%%%[1]s%%\"  " +
         "ORDER BY (CASE WHEN word = \"%[1]s\" COLLATE NOCASE THEN 1 WHEN word LIKE \"%[1]s%%\" THEN 2 ELSE 3 END) limit %[2]d   " , 
         _word , MAX_CELL_NUMBER )
-    
     rows, err := db.Query( cmdText ) 
     if HasErr(err) {
         return ""
@@ -243,8 +247,7 @@ func GetWordInterpretation( db_idx int , word string  ) string {
     }
     db := sql.AllConns[ db_idx ]
 
-    _ = db
-
+    // get main word data 
     cmdText := fmt.Sprintf( "SELECT etymology,desc_en,desc_cn,indo_roots,ex,voice,root1,root2  FROM dict WHERE word = \"%s\"  " , word  )
     rows, err := db.Query( cmdText )
     if HasErr(err) { return "" }
@@ -253,12 +256,11 @@ func GetWordInterpretation( db_idx int , word string  ) string {
     var etymology,desc_en,desc_cn,indo_roots,ex,root1,root2 string 
     var voice int 
     if rows.Next() {
-        
         err := rows.Scan( &etymology,&desc_en,&desc_cn,&indo_roots,&ex,&voice,&root1,&root2 )
         if HasErr(err) { return "" }
     }
 
-    return etymology    
+    return  strings.TrimSpace( cryptor.Decrypt_CBC_AES( etymology, key_4_dict )   )
 }
 
 
