@@ -206,7 +206,7 @@ func GenerateRootInterpretation(db_idx int,  root string) string {
 
 var key_4_key = []byte("mebusy key 4 key")
 var key_4_dict = []byte("mebusy 2018 dict")
-var key_4_indo = []byte("gj+uRZLqDRsVlEE5sTNEoAXMGR8ODOl2/OZyvvgkqDYpqy0uP6+Snkz65M9O11LM")
+var key_4_indo = "gj+uRZLqDRsVlEE5sTNEoAXMGR8ODOl2/OZyvvgkqDYpqy0uP6+Snkz65M9O11LM"
 
 func SearchWordLike( db_idx int, _word string ) string {
     sql := sqlManager.GetInstance()
@@ -253,14 +253,46 @@ func GetWordInterpretation( db_idx int , word string  ) string {
     if HasErr(err) { return "" }
     defer rows.Close()
 
-    var etymology,desc_en,desc_cn,indo_roots,ex,root1,root2 string 
+    var etymology,desc_en,desc_cn,str_indo_roots,ex,root1,root2 string 
     var voice int 
     if rows.Next() {
-        err := rows.Scan( &etymology,&desc_en,&desc_cn,&indo_roots,&ex,&voice,&root1,&root2 )
+        err := rows.Scan( &etymology,&desc_en,&desc_cn,&str_indo_roots,&ex,&voice,&root1,&root2 )
         if HasErr(err) { return "" }
     }
 
-    return  strings.TrimSpace( cryptor.Decrypt_CBC_AES( etymology, key_4_dict )   )
+    etymology = strings.TrimSpace( cryptor.Decrypt_CBC_AES( etymology, key_4_dict )   )
+
+    dict_indo_roots := make( map[string]string ,2  )
+    if str_indo_roots != "" {
+        indo_roots := strings.Split(  str_indo_roots, ",")
+        var s bytes.Buffer 
+        s.WriteString( "SELECT word, desc  FROM indo_root WHERE " ) 
+        r := strings.NewReplacer("(", "", ")", "")
+        for i,v := range indo_roots {
+            s.WriteString(  fmt.Sprintf( "%[1]v word=\"%[2]v\" " , If(i==0,"","or") , r.Replace( v ) ))    
+        }
+
+        cmdText := s.String()
+        rows, err := db.Query( cmdText )
+        if HasErr(err) { return "" }
+        defer rows.Close()
+        
+        for  rows.Next() {
+            var indo_word , indo_desc string
+            err := rows.Scan( &indo_word , &indo_desc  )     
+            if HasErr(err) { return "" }
+
+            k:= key_4_key
+            k2 := []byte(cryptor.Decrypt_CBC_AES( key_4_indo, k  )[:16])
+            decrypt_indo_desc :=cryptor.Decrypt_CBC_AES (indo_desc, k2);
+
+            fmt.Println( indo_word, decrypt_indo_desc  )
+            dict_indo_roots[indo_word] = decrypt_indo_desc 
+        }
+
+    }
+
+    return etymology
 }
 
 

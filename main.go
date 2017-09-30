@@ -6,6 +6,7 @@ import (
     "os"
     "path/filepath"
     "runtime"
+    "strings"
 )
 
 func main() {
@@ -39,8 +40,13 @@ func main() {
 
     dictUtils.SearchWordLike( db_idx_dict, "percei" )
 
-    fmt.Println( dictUtils.GetWordInterpretation(  db_idx_dict , "perceive" ) )
+    fmt.Println( dictUtils.GetWordInterpretation(  db_idx_dict , "economy" ) )
 
     dictUtils.DBCloseAll()
+
+    fmt.Println( "test..." )
+    r := strings.NewReplacer("(", "", ")", "")
+    fmt.Println( r.Replace( "a(b)c)d" )  )
+
     fmt.Println( "done" )
 }
