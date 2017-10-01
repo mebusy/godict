@@ -238,6 +238,8 @@ func SearchWordLike( db_idx int, _word string ) string {
     }
     return ""
 }
+var sepline = strings.Repeat( "·", 60 ) 
+var sep = "\n<color=#DAEDF1>" + sepline + "</color>\n"
 
 func GetWordInterpretation( db_idx int , word string  ) string {
     sql := sqlManager.GetInstance()
@@ -286,13 +288,55 @@ func GetWordInterpretation( db_idx int , word string  ) string {
             k2 := []byte(cryptor.Decrypt_CBC_AES( key_4_indo, k  )[:16])
             decrypt_indo_desc :=cryptor.Decrypt_CBC_AES (indo_desc, k2);
 
-            fmt.Println( indo_word, decrypt_indo_desc  )
+            // fmt.Println( indo_word, decrypt_indo_desc  )
             dict_indo_roots[indo_word] = decrypt_indo_desc 
         }
+    }
+    var entire_text string
+    {
+        var indo_roots  bytes.Buffer 
+        for k,v := range dict_indo_roots {
+            indo_roots.WriteString( fmt.Sprintf( "\n<b><color=%[3]s>%[1]s</color></b>: %[2]s", k,v, COLOR_ROOT  ) )
+        }
+        indo_root := indo_roots.String()
 
+        if etymology != "" {
+            etymology =  "<b><color=blue>Roots</color></b>:\n" + etymology
+
+            // 如果有的话， 两个放一起显示，分割线现在不加
+            if indo_root == "" {
+                etymology += sep  
+            }
+        }
+        if indo_root != ""  {  // 若没有不显示
+            indo_root +=  sep;
+        }
+
+        ch_root1_mean := make(  chan string )
+        ch_root2_mean := make(  chan string )
+        root_info := "";
+        if root1 != "" {
+            go generateFormatedMeaning ( root1 , ch_root1_mean )
+        }
+        if root2 != "" {
+            go generateFormatedMeaning ( root2 , ch_root2_mean )
+        }
+        if root1 != "" { root_info += <- ch_root1_mean }
+        if root2 != "" { root_info += "\n"+ <- ch_root2_mean }
+
+        if ex != "" {
+            // 后期可能添加 单独的助记，也既 虽然没有root， 但是 有助记
+            if root_info != "" { root_info += "\n" }
+            root_info += fmt.Sprintf( "<color=blue>助记:  </color>%s" , ex )
+        }
+        
+        if root_info != "" { root_info += sep }
+        if desc_en != ""  { desc_en+= sep }
+
+         entire_text = fmt.Sprintf( "\n%s%s%s%s%s\n\n\n\n" , etymology   , indo_root ,  root_info , desc_cn ,desc_en    )
     }
 
-    return etymology
+    return entire_text
 }
 
 
