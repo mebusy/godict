@@ -25,13 +25,7 @@ func DBCloseAll() {
     sql.CloseAll()    
 }
 
-var _rootDict  map[string] []string
-var __allkeys = []string{}
-
-
-
 const COLOR_ROOT = "#008b8b" 
-
 
 func GenerateRootInterpretation(db_idx int,  root string) string {
     ch_root_mean := make(  chan string )

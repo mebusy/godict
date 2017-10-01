@@ -12,6 +12,9 @@ import (
 
 )
 
+var _rootDict  map[string] []string
+var __allkeys = []string{}
+
 func LoadRootDict( db_idx int ) {
     if _rootDict != nil {
         return
