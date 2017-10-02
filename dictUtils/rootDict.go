@@ -9,31 +9,32 @@ import (
     "log"
     "strings"
     "bytes"
-
+    "encoding/json"
 )
 
 var _rootDict  map[string] []string
-var __allkeys = []string{}
 
-func LoadRootDict( db_idx int ) {
+func LoadRootDict( db_idx int ) []byte {
     if _rootDict != nil {
-        return
+        return []byte{}
     }
     sql := sqlManager.GetInstance()
     if db_idx<0 || db_idx > sql.ConnectionCount() {
         log.Println( "LoadRootDict","wrong db index" )
-        return 
+        return []byte{}
     }
     // load dict
     cmdText :=  "SELECT word,en1,cn1,show_en1,en2,cn2,show_en2,en3,cn3,show_en3,en4,cn4,show_en4 from root ORDER BY word COLLATE NOCASE " 
     db := sql.AllConns[ db_idx ]
     rows, err := db.Query( cmdText ) 
     if HasErr(err) {
-        return    
+        return []byte{}
     }
     defer rows.Close()
 
     _rootDict = make( map[string] []string , 1200 ) 
+    var __allkeys = []string{}
+
     for rows.Next() {
         items := make( []string, 0, 6 )
         var word string 
@@ -64,6 +65,12 @@ func LoadRootDict( db_idx int ) {
     }
 
     log.Println( "root dict loaded ", len( _rootDict ) , "total"  )
+    b, err :=  json.Marshal( __allkeys )
+    if err != nil {
+        log.Println( "encode __allkeys failed:" , err.Error() )   
+        return []byte{}
+    }
+    return b
 }
 
 // get format root meaning , it should has en meaning, cn meaning 
