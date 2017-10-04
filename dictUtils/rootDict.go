@@ -177,5 +177,13 @@ func generateRootWordExamples(db_idx int,  root string, ch chan string ) {
     ch <- strings.TrimSpace(sb.String() )
 }
 
-
+func GetBriefRootMeaning( root string ) string {
+    means := _rootDict[root]
+    var text string 
+    for i:=0 ; i<len(means) ; i+=3 {
+        mean := strings.Split( means[i + 1] , "--"  )[0]
+        text += fmt.Sprintf( "%v;" , mean  )
+    }
+    return text[:len(text)-1] + "\u3000⟩" 
+}
 
