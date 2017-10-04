@@ -184,6 +184,6 @@ func GetBriefRootMeaning( root string ) string {
         mean := strings.Split( means[i + 1] , "--"  )[0]
         text += fmt.Sprintf( "%v;" , mean  )
     }
-    return text[:len(text)-1] + "\u3000⟩" 
+    return text[:len(text)-1] + "\u3000〉" 
 }
 
