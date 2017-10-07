@@ -70,6 +70,9 @@ func LoadRootDict( db_idx int ) []byte {
         log.Println( "encode __allkeys failed:" , err.Error() )   
         return []byte{}
     }
+
+    go GenerateRootInterpretation( db_idx , "ceive" )
+
     return b
 }
 
