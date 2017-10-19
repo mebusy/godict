@@ -63,5 +63,12 @@ func (m sqlManager) CloseAll() {
     }
 }
 
-
+func ( m sqlManager ) GetDBConnectionByIndex( db_idx int ) * sql.DB {
+    if db_idx<0 || db_idx > m.ConnectionCount() {
+        log.Println( "wrong db index: " , db_idx  )
+        return nil 
+    }
+    db := m.AllConns[ db_idx ]
+    return db 
+}
 

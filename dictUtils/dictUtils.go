@@ -12,6 +12,10 @@ import (
 
 )
 
+func init() {
+    log.SetPrefix( "godict " )    
+}
+
 
 func DBConnect( db_path string ) int {
     sql := sqlManager.GetInstance()
